@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Next.js 16.1.6 application built with TypeScript, React 19, and Tailwind CSS v4. The project appears to be a lifting diary application ("lifting-diary-course").
 
+## Development Guidelines
+
+**IMPORTANT**: When generating any code, ALWAYS first refer to the relevant documentation files in the `/docs` directory. These docs contain critical context, patterns, and guidelines specific to this project. Review the appropriate documentation before writing or modifying code to ensure consistency with established patterns and best practices.
+
 ## Development Commands
 
 ```bash

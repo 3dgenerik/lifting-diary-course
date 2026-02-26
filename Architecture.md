@@ -35,3 +35,6 @@
 - create db schema structure in db/schema.ts (CC)
 - create dummy data and push it to Neon (CC)
 - install Neon MCP server for Claude Code (go to https://neon.com/docs/ai/neon-mcp-server and follow steps, or simple run "npx add-mcp https://mcp.neon.tech/mcp")
+- creat /docs for md
+- date formating should be done via date-fns
+
