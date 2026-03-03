@@ -4,6 +4,7 @@ import { useState } from "react"
 import { format } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { SectionHeader } from "@/components/ui/section-header"
 
 // Mock workout data for UI demonstration
 const mockWorkouts = [
@@ -40,34 +41,24 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Date Picker Section */}
         <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Date</CardTitle>
-              <CardDescription>
-                {format(selectedDate, "do MMM yyyy")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                className="rounded-md border"
-              />
-            </CardContent>
-          </Card>
+          <SectionHeader
+            title="Select Date"
+            subtitle={format(selectedDate, "do MMM yyyy")}
+          />
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => date && setSelectedDate(date)}
+            className="rounded-md border"
+          />
         </div>
 
         {/* Workouts List Section */}
         <div className="lg:col-span-2">
-          <div className="mb-4">
-            <h2 className="text-2xl font-semibold">
-              Workouts for {format(selectedDate, "do MMM yyyy")}
-            </h2>
-            <p className="text-muted-foreground">
-              {mockWorkouts.length} workout{mockWorkouts.length !== 1 ? "s" : ""} logged
-            </p>
-          </div>
+          <SectionHeader
+            title={`Workouts for ${format(selectedDate, "do MMM yyyy")}`}
+            subtitle={`${mockWorkouts.length} workout${mockWorkouts.length !== 1 ? "s" : ""} logged`}
+          />
 
           <div className="space-y-4">
             {mockWorkouts.length > 0 ? (

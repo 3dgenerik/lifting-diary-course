@@ -69,7 +69,7 @@ export default async function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
         >
-          <header className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+          <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
             <h1 className="text-xl font-semibold">Lifting Diary</h1>
             <div className="flex items-center gap-4">
               <SignedOut>
@@ -90,7 +90,9 @@ export default async function RootLayout({
               </SignedIn>
             </div>
           </header>
-          {children}
+          <main className="pt-[73px]">
+            {children}
+          </main>
         </body>
       </html>
     </ClerkProvider>
