@@ -10,6 +10,8 @@ This is a Next.js 16.1.6 application built with TypeScript, React 19, and Tailwi
 
 **IMPORTANT**: When generating any code, ALWAYS first refer to the relevant documentation files in the `/docs` directory. These docs contain critical context, patterns, and guidelines specific to this project. Review the appropriate documentation before writing or modifying code to ensure consistency with established patterns and best practices.
 
+- /docs/data-fetching.md
+- /docs/routing.md
 - /docs/ui.md
 
 ## Development Commands

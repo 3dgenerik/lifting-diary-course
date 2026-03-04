@@ -10,6 +10,7 @@ import {
 } from "@clerk/nextjs";
 import "./globals.css";
 import { currentUser } from "@clerk/nextjs/server";
+import { QueryProvider } from "@/providers/query-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,7 +92,7 @@ export default async function RootLayout({
             </div>
           </header>
           <main className="pt-[73px]">
-            {children}
+            <QueryProvider>{children}</QueryProvider>
           </main>
         </body>
       </html>
