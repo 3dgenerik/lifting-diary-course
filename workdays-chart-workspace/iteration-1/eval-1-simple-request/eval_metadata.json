@@ -1,0 +1,31 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-request",
+  "prompt": "Show me workdays for 2026",
+  "assertions": [
+    {
+      "name": "PNG file exists",
+      "description": "A PNG chart file was created"
+    },
+    {
+      "name": "Valid PNG format",
+      "description": "The file is a valid PNG image that can be opened"
+    },
+    {
+      "name": "Correct year in title",
+      "description": "Chart title contains '2026'"
+    },
+    {
+      "name": "Shows 12 months",
+      "description": "Chart displays all 12 months (January through December)"
+    },
+    {
+      "name": "Mathematically correct workday counts",
+      "description": "The workday counts match expected values for 2026 (e.g., Jan=22, Feb=20, Mar=22, etc.)"
+    },
+    {
+      "name": "Values displayed on chart",
+      "description": "Numerical values are visible on or near the bars"
+    }
+  ]
+}

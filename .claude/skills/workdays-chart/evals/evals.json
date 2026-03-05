@@ -1,0 +1,23 @@
+{
+  "skill_name": "workdays-chart",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Show me workdays for 2026",
+      "expected_output": "A PNG chart showing working days per month for 2026, with clear bars and labels",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I need to see how many business days are in each month of 2025. Can you make me a chart?",
+      "expected_output": "A PNG chart showing working days per month for 2025",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "hey can you visualize the work calendar for 2027? like show me which months have more working days",
+      "expected_output": "A PNG chart showing working days per month for 2027, making it easy to compare months",
+      "files": []
+    }
+  ]
+}

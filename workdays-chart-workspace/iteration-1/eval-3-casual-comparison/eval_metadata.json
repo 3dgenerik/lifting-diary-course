@@ -1,0 +1,31 @@
+{
+  "eval_id": 3,
+  "eval_name": "casual-comparison",
+  "prompt": "hey can you visualize the work calendar for 2027? like show me which months have more working days",
+  "assertions": [
+    {
+      "name": "PNG file exists",
+      "description": "A PNG chart file was created"
+    },
+    {
+      "name": "Valid PNG format",
+      "description": "The file is a valid PNG image that can be opened"
+    },
+    {
+      "name": "Correct year in title",
+      "description": "Chart title contains '2027'"
+    },
+    {
+      "name": "Shows 12 months",
+      "description": "Chart displays all 12 months (January through December)"
+    },
+    {
+      "name": "Mathematically correct workday counts",
+      "description": "The workday counts match expected values for 2027 (e.g., Jan=21, Feb=20, Mar=23, etc.)"
+    },
+    {
+      "name": "Values displayed on chart",
+      "description": "Numerical values are visible on or near the bars"
+    }
+  ]
+}

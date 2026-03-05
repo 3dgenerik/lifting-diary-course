@@ -1,0 +1,31 @@
+{
+  "eval_id": 2,
+  "eval_name": "business-days",
+  "prompt": "I need to see how many business days are in each month of 2025. Can you make me a chart?",
+  "assertions": [
+    {
+      "name": "PNG file exists",
+      "description": "A PNG chart file was created"
+    },
+    {
+      "name": "Valid PNG format",
+      "description": "The file is a valid PNG image that can be opened"
+    },
+    {
+      "name": "Correct year in title",
+      "description": "Chart title contains '2025'"
+    },
+    {
+      "name": "Shows 12 months",
+      "description": "Chart displays all 12 months (January through December)"
+    },
+    {
+      "name": "Mathematically correct workday counts",
+      "description": "The workday counts match expected values for 2025 (e.g., Jan=23, Feb=20, Mar=21, etc.)"
+    },
+    {
+      "name": "Values displayed on chart",
+      "description": "Numerical values are visible on or near the bars"
+    }
+  ]
+}

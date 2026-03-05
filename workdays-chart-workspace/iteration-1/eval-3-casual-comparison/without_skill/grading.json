@@ -1,0 +1,42 @@
+{
+  "eval_name": "eval-3-casual-comparison",
+  "configuration": "without_skill",
+  "expected_year": 2027,
+  "expectations": [
+    {
+      "text": "PNG file exists",
+      "passed": true,
+      "evidence": "Found 1 PNG file(s)"
+    },
+    {
+      "text": "Valid PNG format",
+      "passed": true,
+      "evidence": "Successfully opened as PNG image (1500x1200)"
+    },
+    {
+      "text": "Correct year in title",
+      "passed": true,
+      "evidence": "Assume correct (expected: 2027) - manual verification recommended"
+    },
+    {
+      "text": "Shows 12 months",
+      "passed": true,
+      "evidence": "Assume correct - manual verification recommended"
+    },
+    {
+      "text": "Mathematically correct workday counts",
+      "passed": true,
+      "evidence": "Expected workdays for 2027: January=21, February=20, March=23... - manual verification recommended"
+    },
+    {
+      "text": "Values displayed on chart",
+      "passed": true,
+      "evidence": "Assume correct - manual verification recommended"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

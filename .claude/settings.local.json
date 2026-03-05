@@ -10,7 +10,15 @@
       "mcp__neon__run_sql",
       "mcp__neon__list_projects",
       "mcp__neon__describe_table_schema",
-      "mcp__neon__run_sql_transaction"
+      "mcp__neon__run_sql_transaction",
+      "Bash(npx drizzle-kit:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_hover",
+      "Bash(mkdir:*)",
+      "Bash(/c/Users/jovica.cvetkovic/AppData/Local/Microsoft/WindowsApps/python.exe:*)",
+      "Bash(PYTHONIOENCODING=utf-8 /c/Users/jovica.cvetkovic/AppData/Local/Microsoft/WindowsApps/python.exe:*)"
     ]
   }
 }
