@@ -167,4 +167,29 @@ export const workoutRouter = router({
 
       return updatedWorkout;
     }),
+
+  complete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const { userId } = ctx;
+
+      // Verify ownership before updating
+      const workout = await db.query.workouts.findFirst({
+        where: and(eq(workouts.id, input.id), eq(workouts.userId, userId)),
+      });
+
+      if (!workout) {
+        throw new Error('Workout not found or unauthorized');
+      }
+
+      const [completedWorkout] = await db
+        .update(workouts)
+        .set({
+          completedAt: new Date(),
+        })
+        .where(eq(workouts.id, input.id))
+        .returning();
+
+      return completedWorkout;
+    }),
 });

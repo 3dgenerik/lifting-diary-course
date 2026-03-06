@@ -156,3 +156,19 @@ export function useDeleteWorkout() {
     },
   });
 }
+
+/**
+ * Hook to complete a workout
+ */
+export function useCompleteWorkout() {
+  const queryClient = useQueryClient();
+
+  return trpc.workout.complete.useMutation({
+    onSettled: () => {
+      // Refetch after mutation
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getAll']] });
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getByDate']] });
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getById']] });
+    },
+  });
+}

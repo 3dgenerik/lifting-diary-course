@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
-import { CalendarIcon, Plus } from "lucide-react"
+import { CalendarIcon, Plus, Check } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -139,14 +139,21 @@ export default function DashboardPage() {
                   >
                     <CardHeader>
                       <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle>{workout.name}</CardTitle>
-                          <CardDescription>
-                            {completedTime && `Completed at ${completedTime}`}
-                            {duration && ` • Duration: ${duration}m`}
-                            {!completedTime && !duration && "Workout logged"}
-                          </CardDescription>
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <CardTitle>{workout.name}</CardTitle>
+                            <CardDescription>
+                              {completedTime && `Completed at ${completedTime}`}
+                              {duration && ` • Duration: ${duration}m`}
+                              {!completedTime && !duration && "Workout logged"}
+                            </CardDescription>
+                          </div>
                         </div>
+                        {workout.completedAt && (
+                          <div className="flex items-center justify-center w-[22.4px] h-[22.4px] bg-green-500 rounded-full">
+                            <Check className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>
