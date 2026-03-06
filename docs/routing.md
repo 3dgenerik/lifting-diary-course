@@ -49,18 +49,23 @@ src/app/
 
 ### Middleware Configuration
 
-Route protection is implemented in `src/proxy.ts` using Clerk's middleware:
+Route protection is implemented in `src/proxy.ts` using Clerk's middleware with **server-side redirects**:
 
 ```typescript
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',  // Protects /dashboard and all sub-routes
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    const { userId } = await auth();
+    if (!userId) {
+      // Server-side redirect - returns HTTP 307 before rendering
+      return NextResponse.redirect(new URL('/', request.url));
+    }
   }
 });
 
@@ -74,6 +79,12 @@ export const config = {
 };
 ```
 
+**Why server-side redirect?**
+- Authentication check happens on the server before any page content is rendered
+- Returns an HTTP 307 redirect, preventing unauthorized users from ever seeing protected content
+- No flash of unauthorized content or UI flicker
+- Completely secure - cannot be bypassed by disabling JavaScript
+
 ### Key Concepts
 
 #### `createRouteMatcher(patterns)`
@@ -81,10 +92,11 @@ export const config = {
 - Supports wildcards: `/dashboard(.*)` matches `/dashboard` and all sub-paths
 - Case-insensitive by default
 
-#### `auth.protect()`
-- Redirects unauthenticated users to Clerk's sign-in page
-- Automatically returns users to the protected route after sign-in
-- Throws error if authentication fails (caught by Clerk)
+#### `NextResponse.redirect()` for Server-Side Redirects
+- Returns an HTTP 307 redirect response before any page rendering occurs
+- Completely server-controlled and secure - cannot be bypassed
+- Prevents flash of unauthorized content (no UI flicker)
+- Redirect happens at the network level, not in the browser JavaScript
 
 ### Protected vs Public Routes
 
@@ -95,6 +107,112 @@ export const config = {
 **Public Routes (no authentication required):**
 - `/` - Landing page
 - Any route not matching `/dashboard(.*)`
+
+## Server-Side vs Client-Side Protection
+
+### Server-Side Protection (Recommended - Our Standard)
+
+**Our current approach** uses server-side authentication checks in middleware (`src/proxy.ts`). This is the **recommended and secure** way to protect routes.
+
+**How it works:**
+1. User requests `/dashboard`
+2. Middleware intercepts the request on the server
+3. Server checks authentication before rendering anything
+4. If unauthenticated: Server returns HTTP 307 redirect to `/`
+5. If authenticated: Server renders and returns the protected page
+
+**Advantages:**
+- **Security:** User never receives protected content - check happens before rendering
+- **Performance:** No unnecessary page loads or client-side redirects
+- **No UI flicker:** User never sees a flash of unauthorized content
+- **SEO-safe:** Search engines see proper redirects
+- **Cannot be bypassed:** Works even with JavaScript disabled
+
+**Code example (current implementation):**
+```typescript
+// src/proxy.ts
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+});
+```
+
+### Client-Side Protection (Not Recommended)
+
+Client-side protection relies on JavaScript running in the browser to check authentication and redirect users.
+
+**How it would work (DON'T DO THIS):**
+1. User requests `/dashboard`
+2. Server sends the full protected page HTML
+3. React hydrates in the browser
+4. `useAuth()` hook checks authentication
+5. JavaScript redirects user if unauthenticated
+
+**Why this is problematic:**
+- **Security risk:** Protected HTML is sent to the browser before auth check
+- **Flash of content:** User briefly sees protected content before redirect
+- **Bypassable:** User can disable JavaScript and view content
+- **Slower:** Requires full page load, React hydration, then redirect
+- **Bad UX:** Jarring redirect after page has loaded
+- **SEO issues:** Search engines may index protected content
+
+**Anti-pattern example (DON'T USE):**
+```typescript
+// ❌ WRONG - Don't do client-side protection
+'use client';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+export default function DashboardPage() {
+  const { userId, isLoaded } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoaded && !userId) {
+      router.push('/'); // Client-side redirect - TOO LATE!
+    }
+  }, [userId, isLoaded, router]);
+
+  // This content gets rendered before redirect!
+  return <div>Protected content</div>;
+}
+```
+
+### When to Use Each Approach
+
+| Scenario | Approach | Reason |
+|----------|----------|--------|
+| **Protecting entire routes** | Server-side (middleware) | Security, performance, UX |
+| **Protecting data/features** | Server-side (middleware) | Security requirement |
+| **Soft UI customization** | Client-side (conditional rendering) | Not for security, just UI |
+| **Showing/hiding UI elements** | Client-side (`<SignedIn>`, `<SignedOut>`) | Cosmetic only, not protection |
+
+**Important:** Client-side auth checks with `useAuth()` or `<SignedIn>` should **NEVER** be used as the primary route protection mechanism. They are only suitable for cosmetic UI changes (e.g., showing different buttons for logged-in users), not for security.
+
+**Correct client-side usage (UI customization only):**
+```typescript
+// ✅ CORRECT - Using client-side checks for UI only, not protection
+'use client';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
+
+export function Header() {
+  return (
+    <header>
+      <SignedOut>
+        <SignInButton />
+      </SignedOut>
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+    </header>
+  );
+}
+```
 
 ## Implementation Patterns
 
@@ -179,18 +297,26 @@ export default async function DashboardLayout({
 
 - **Use `/dashboard` prefix** for all authenticated routes
 - **Rely on middleware** for authentication - don't duplicate auth checks in page components
+- **Use server-side redirect** in `src/proxy.ts` with `NextResponse.redirect()` for all route protection
+- **Let middleware handle auth before rendering** - this prevents any protected content from reaching the client
+- **Use explicit `NextResponse.redirect()`** for predictable, secure redirect behavior
 - **Use route groups** `(pages)` to organize without affecting URLs
 - **Access auth in Server Components** using `await auth()`
 - **Validate authorization** - just because a user is authenticated doesn't mean they can access all data
 - **Use dynamic routes** for resource-specific pages (`[id]`)
+- **Use client-side auth components** (`<SignedIn>`, `<SignedOut>`) only for UI customization, not security
 
 ### ❌ DON'T
 
 - **Don't create top-level authenticated routes** - use `/dashboard/*` instead
 - **Don't check authentication in page components** - let middleware handle it
+- **Don't use client-side auth protection** with `useAuth()` + `router.push()` as primary protection
+- **Don't rely on client-side checks for security** - they can be bypassed
+- **Don't use conditional rendering** (`<SignedIn>`) as route protection - use middleware instead
 - **Don't expose sensitive data** in public routes or client components
 - **Don't forget authorization** - always verify users can access the specific resource
 - **Don't use Pages Router patterns** - this is an App Router project
+- **Don't assume client-side redirects are secure** - always protect routes on the server
 
 ## Route Examples
 
@@ -249,10 +375,14 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
 
 ### Manual Testing Checklist
 
-1. **Unauthenticated Access:**
+1. **Unauthenticated Access (Server-Side Redirect):**
    - Visit `/dashboard` while logged out
-   - Should redirect to Clerk sign-in page
-   - After sign-in, should return to `/dashboard`
+   - **Expected behavior:**
+     - Server returns **HTTP 307** redirect status
+     - Browser redirects to `/` (home page)
+     - **No protected HTML content is sent to the client**
+     - Check Network tab: response should be redirect, not HTML content
+   - After sign-in, should be able to access `/dashboard`
 
 2. **Authenticated Access:**
    - Sign in through Clerk
@@ -264,6 +394,15 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
    - Try accessing another user's workout by ID
    - Should return 404 or error (not unauthorized user's data)
 
+4. **Network-Level Verification:**
+   - Open browser DevTools → Network tab
+   - While logged out, navigate to `/dashboard`
+   - Verify:
+     - Initial request returns **307 Temporary Redirect**
+     - Response body is empty or contains minimal redirect info
+     - No React hydration occurs before redirect
+     - Redirect happens before any content is rendered
+
 ### Development Testing
 
 ```bash
@@ -272,8 +411,41 @@ npm run dev
 
 # Test routes:
 # http://localhost:3000/              - Public (should work)
-# http://localhost:3000/dashboard     - Protected (should redirect to sign-in)
+# http://localhost:3000/dashboard     - Protected (should redirect with HTTP 307)
 ```
+
+### Expected HTTP Behavior
+
+**Unauthenticated request to protected route:**
+```
+GET /dashboard HTTP/1.1
+Host: localhost:3000
+
+HTTP/1.1 307 Temporary Redirect
+Location: /
+```
+
+**Authenticated request to protected route:**
+```
+GET /dashboard HTTP/1.1
+Host: localhost:3000
+Cookie: __session=...
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+```
+
+### Verifying Security
+
+**✅ Correct (Server-Side):**
+- Network tab shows 307 redirect
+- No protected content in response body
+- Redirect happens instantly (before page load)
+
+**❌ Incorrect (Client-Side):**
+- Network tab shows 200 OK with full HTML
+- Protected content visible in response body
+- Page loads, then redirects (flash of content)
 
 ## Common Patterns
 

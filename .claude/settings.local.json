@@ -21,7 +21,8 @@
       "Bash(PYTHONIOENCODING=utf-8 /c/Users/jovica.cvetkovic/AppData/Local/Microsoft/WindowsApps/python.exe:*)",
       "Bash(git stash:*)",
       "Bash(git checkout:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npx shadcn@latest:*)"
     ]
   }
 }

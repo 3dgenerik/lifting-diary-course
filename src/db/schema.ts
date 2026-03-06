@@ -6,8 +6,6 @@ export const workouts = pgTable('workouts', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   userId: text('user_id').notNull(),
   name: text('name').notNull(),
-  adress: text('name').notNull(),
-  city: text('name').notNull(),
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

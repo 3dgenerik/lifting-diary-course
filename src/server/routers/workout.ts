@@ -72,7 +72,7 @@ export const workoutRouter = router({
     .input(
       z.object({
         name: z.string(),
-        startedAt: z.date().optional(),
+        startedAt: z.date(),
         completedAt: z.date().optional(),
       })
     )
