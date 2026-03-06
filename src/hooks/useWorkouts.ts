@@ -24,6 +24,14 @@ export function useWorkouts() {
 }
 
 /**
+ * Hook to fetch a single workout by ID
+ * @param id - Workout ID
+ */
+export function useWorkoutById(id: number) {
+  return trpc.workout.getById.useQuery({ id });
+}
+
+/**
  * Hook to create a new workout with optimistic updates
  */
 export function useCreateWorkout() {
@@ -63,6 +71,51 @@ export function useCreateWorkout() {
     onSettled: () => {
       // Refetch after mutation
       queryClient.invalidateQueries({ queryKey: [['workout', 'getAll']] });
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getByDate']] });
+    },
+  });
+}
+
+/**
+ * Hook to update a workout with optimistic updates
+ */
+export function useUpdateWorkout() {
+  const queryClient = useQueryClient();
+
+  return trpc.workout.update.useMutation({
+    onMutate: async (updatedWorkout) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [['workout', 'getAll']] });
+      await queryClient.cancelQueries({ queryKey: [['workout', 'getById']] });
+
+      // Snapshot previous values
+      const previousWorkouts = queryClient.getQueryData([['workout', 'getAll']]);
+      const previousWorkout = queryClient.getQueryData([['workout', 'getById'], { input: { id: updatedWorkout.id } }]);
+
+      // Optimistically update in the list
+      queryClient.setQueryData([['workout', 'getAll']], (old: WorkoutWithRelations[] = []) =>
+        old.map((workout) =>
+          workout.id === updatedWorkout.id
+            ? { ...workout, ...updatedWorkout }
+            : workout
+        )
+      );
+
+      return { previousWorkouts, previousWorkout };
+    },
+
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousWorkouts) {
+        queryClient.setQueryData([['workout', 'getAll']], context.previousWorkouts);
+      }
+    },
+
+    onSettled: () => {
+      // Refetch after mutation
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getAll']] });
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getByDate']] });
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getById']] });
     },
   });
 }
@@ -99,6 +152,7 @@ export function useDeleteWorkout() {
     onSettled: () => {
       // Refetch after mutation
       queryClient.invalidateQueries({ queryKey: [['workout', 'getAll']] });
+      queryClient.invalidateQueries({ queryKey: [['workout', 'getByDate']] });
     },
   });
 }

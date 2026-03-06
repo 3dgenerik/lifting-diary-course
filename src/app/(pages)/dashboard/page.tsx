@@ -1,19 +1,53 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
+import { CalendarIcon, Plus } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SectionHeader } from "@/components/ui/section-header"
 import { useWorkoutsByDate } from "@/hooks/useWorkouts"
 
 export default function DashboardPage() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Get initial date from URL parameter or use today
+  const getInitialDate = () => {
+    const dateParam = searchParams.get('date')
+    if (dateParam) {
+      const [year, month, day] = dateParam.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    }
+    return new Date()
+  }
+
+  const [selectedDate, setSelectedDate] = useState<Date>(getInitialDate())
+  const [open, setOpen] = useState(false)
 
   // Fetch workouts for the selected date
   const { data: workouts = [], isLoading, error } = useWorkoutsByDate(
     selectedDate.toISOString()
   )
+
+  // Handle date selection and close popover
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date)
+      setOpen(false)
+      const dateParam = format(date, 'yyyy-MM-dd')
+      router.push(`/dashboard?date=${dateParam}`)
+    }
+  }
+
+  // Navigate to new workout page with selected date
+  const handleAddWorkout = () => {
+    const dateParam = format(selectedDate, 'yyyy-MM-dd')
+    router.push(`/dashboard/workout/new?date=${dateParam}`)
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
@@ -24,14 +58,27 @@ export default function DashboardPage() {
         <div className="lg:col-span-1">
           <SectionHeader
             title="Select Date"
-            subtitle={format(selectedDate, "do MMM yyyy")}
+            subtitle="Click to choose a date"
           />
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => date && setSelectedDate(date)}
-            className="rounded-md border"
-          />
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(selectedDate, "do MMM yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Workouts List Section */}
@@ -44,6 +91,14 @@ export default function DashboardPage() {
                 : `${workouts.length} workout${workouts.length !== 1 ? "s" : ""} logged`
             }
           />
+
+          <Button
+            onClick={handleAddWorkout}
+            className="w-full mb-4"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Workout
+          </Button>
 
           <div className="space-y-4">
             {error ? (
@@ -77,7 +132,11 @@ export default function DashboardPage() {
                   : null;
 
                 return (
-                  <Card key={workout.id}>
+                  <Card
+                    key={workout.id}
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => router.push(`/dashboard/workout/${workout.id}`)}
+                  >
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>

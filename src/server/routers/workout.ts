@@ -26,8 +26,8 @@ export const workoutRouter = router({
       const userWorkouts = await db.query.workouts.findMany({
         where: and(
           eq(workouts.userId, userId),
-          gte(workouts.createdAt, startOfDay),
-          lte(workouts.createdAt, endOfDay)
+          gte(workouts.startedAt, startOfDay),
+          lte(workouts.startedAt, endOfDay)
         ),
         orderBy: [desc(workouts.createdAt)],
         with: {
@@ -109,5 +109,62 @@ export const workoutRouter = router({
       await db.delete(workouts).where(eq(workouts.id, input.id));
 
       return { success: true };
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const { userId } = ctx;
+
+      const workout = await db.query.workouts.findFirst({
+        where: and(eq(workouts.id, input.id), eq(workouts.userId, userId)),
+        with: {
+          workoutExercises: {
+            orderBy: [asc(workoutExercises.exerciseOrder)],
+            with: {
+              exercise: true,
+              sets: {
+                orderBy: [asc(sets.setOrder)],
+              },
+            },
+          },
+        },
+      });
+
+      return workout;
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        startedAt: z.date(),
+        completedAt: z.date().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userId } = ctx;
+
+      // Verify ownership before updating
+      const workout = await db.query.workouts.findFirst({
+        where: and(eq(workouts.id, input.id), eq(workouts.userId, userId)),
+      });
+
+      if (!workout) {
+        throw new Error('Workout not found or unauthorized');
+      }
+
+      const [updatedWorkout] = await db
+        .update(workouts)
+        .set({
+          name: input.name,
+          startedAt: input.startedAt,
+          completedAt: input.completedAt,
+        })
+        .where(eq(workouts.id, input.id))
+        .returning();
+
+      return updatedWorkout;
     }),
 });

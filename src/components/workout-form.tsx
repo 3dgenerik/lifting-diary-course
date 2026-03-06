@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,7 @@ import {
   FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCreateWorkout } from '@/hooks/useWorkouts';
+import { useCreateWorkout, useUpdateWorkout } from '@/hooks/useWorkouts';
 
 const workoutFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -25,35 +25,91 @@ const workoutFormSchema = z.object({
 
 type WorkoutFormValues = z.infer<typeof workoutFormSchema>;
 
-export function WorkoutForm() {
-  const router = useRouter();
-  const createWorkout = useCreateWorkout();
+interface WorkoutFormProps {
+  mode?: 'create' | 'edit';
+  workoutId?: number;
+  initialValues?: {
+    name: string;
+    startedAt: Date;
+  };
+}
 
-  // Format current date and time for datetime-local input (YYYY-MM-DDTHH:mm)
+export function WorkoutForm({
+  mode = 'create',
+  workoutId,
+  initialValues
+}: WorkoutFormProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const createWorkout = useCreateWorkout();
+  const updateWorkout = useUpdateWorkout();
+
+  // Get date from URL parameter if available (only for create mode), otherwise use current date
+  const dateParam = searchParams.get('date');
   const now = new Date();
-  const defaultDateTime = format(now, "yyyy-MM-dd'T'HH:mm");
+
+  // If date param exists, use that date but with current time
+  // Otherwise just use current date and time
+  let dateTimeToUse: Date;
+  if (dateParam && mode === 'create') {
+    // Parse date in local timezone (format: YYYY-MM-DD)
+    const [year, month, day] = dateParam.split('-').map(Number);
+    // Create new date with selected date but current time (month is 0-indexed)
+    dateTimeToUse = new Date(
+      year,
+      month - 1,
+      day,
+      now.getHours(),
+      now.getMinutes()
+    );
+  } else {
+    dateTimeToUse = now;
+  }
+
+  // Determine default values based on mode
+  let defaultDateTime: string;
+  let defaultName: string;
+
+  if (mode === 'edit' && initialValues) {
+    defaultDateTime = format(initialValues.startedAt, "yyyy-MM-dd'T'HH:mm");
+    defaultName = initialValues.name;
+  } else {
+    defaultDateTime = format(dateTimeToUse, "yyyy-MM-dd'T'HH:mm");
+    defaultName = '';
+  }
 
   const form = useForm<WorkoutFormValues>({
     resolver: zodResolver(workoutFormSchema),
     defaultValues: {
-      name: '',
+      name: defaultName,
       startedAt: defaultDateTime,
     },
   });
 
   const onSubmit = async (data: WorkoutFormValues) => {
     try {
-      await createWorkout.mutateAsync({
-        name: data.name,
-        startedAt: new Date(data.startedAt),
-      });
+      if (mode === 'edit' && workoutId) {
+        await updateWorkout.mutateAsync({
+          id: workoutId,
+          name: data.name,
+          startedAt: new Date(data.startedAt),
+        });
+      } else {
+        await createWorkout.mutateAsync({
+          name: data.name,
+          startedAt: new Date(data.startedAt),
+        });
+      }
 
-      // Navigate back to the dashboard after successful creation
-      router.push('/dashboard');
+      // Navigate back to the dashboard with the workout date
+      const workoutDate = format(new Date(data.startedAt), 'yyyy-MM-dd');
+      router.push(`/dashboard?date=${workoutDate}`);
     } catch (error) {
-      console.error('Failed to create workout:', error);
+      console.error('Failed to save workout:', error);
     }
   };
+
+  const isSubmitting = createWorkout.isPending || updateWorkout.isPending;
 
   return (
     <Form {...form}>
@@ -97,12 +153,14 @@ export function WorkoutForm() {
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={createWorkout.isPending}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={createWorkout.isPending}>
-            {createWorkout.isPending ? 'Creating...' : 'Create Workout'}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? (mode === 'edit' ? 'Updating...' : 'Creating...')
+              : (mode === 'edit' ? 'Update Workout' : 'Create Workout')}
           </Button>
         </div>
       </form>
