@@ -3,13 +3,14 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
-import { CalendarIcon, Plus, Check } from "lucide-react"
+import { CalendarIcon, Plus, Check, Trash2 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SectionHeader } from "@/components/ui/section-header"
-import { useWorkoutsByDate } from "@/hooks/useWorkouts"
+import { useWorkoutsByDate, useDeleteWorkout } from "@/hooks/useWorkouts"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -27,11 +28,16 @@ export default function DashboardPage() {
 
   const [selectedDate, setSelectedDate] = useState<Date>(getInitialDate())
   const [open, setOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [workoutToDelete, setWorkoutToDelete] = useState<number | null>(null)
 
   // Fetch workouts for the selected date
   const { data: workouts = [], isLoading, error } = useWorkoutsByDate(
     selectedDate.toISOString()
   )
+
+  // Delete workout mutation
+  const deleteWorkout = useDeleteWorkout()
 
   // Handle date selection and close popover
   const handleDateSelect = (date: Date | undefined) => {
@@ -48,6 +54,24 @@ export default function DashboardPage() {
     const dateParam = format(selectedDate, 'yyyy-MM-dd')
     router.push(`/dashboard/workout/new?date=${dateParam}`)
   }
+
+  // Open delete confirmation modal
+  const handleDeleteClick = (e: React.MouseEvent, workoutId: number) => {
+    e.stopPropagation() // Prevent card click
+    setWorkoutToDelete(workoutId)
+    setDeleteModalOpen(true)
+  }
+
+  // Confirm delete
+  const handleConfirmDelete = () => {
+    if (workoutToDelete) {
+      deleteWorkout.mutate({ id: workoutToDelete })
+      setDeleteModalOpen(false)
+      setWorkoutToDelete(null)
+    }
+  }
+
+  const selectedWorkout = workouts.find(w => w.id === workoutToDelete)
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
@@ -139,21 +163,29 @@ export default function DashboardPage() {
                   >
                     <CardHeader>
                       <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <CardTitle>{workout.name}</CardTitle>
-                            <CardDescription>
+                        <div className="flex-1">
+                          <CardTitle>{workout.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-2 mt-1">
+                            <span>
                               {completedTime && `Completed at ${completedTime}`}
                               {duration && ` • Duration: ${duration}m`}
                               {!completedTime && !duration && "Workout logged"}
-                            </CardDescription>
-                          </div>
+                            </span>
+                            {workout.completedAt && (
+                              <div className="flex items-center justify-center w-[18px] h-[18px] bg-green-500 rounded-full flex-shrink-0">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </CardDescription>
                         </div>
-                        {workout.completedAt && (
-                          <div className="flex items-center justify-center w-[22.4px] h-[22.4px] bg-green-500 rounded-full">
-                            <Check className="w-3.5 h-3.5 text-white" />
-                          </div>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => handleDeleteClick(e, workout.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -215,6 +247,30 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Da li si siguran?</DialogTitle>
+            <DialogDescription>
+              Da li si siguran da želiš da izbrišeš workout "{selectedWorkout?.name}"?
+              Ova akcija ne može biti poništena.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModalOpen(false)}
+            >
+              Otkaži
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Izbriši
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
