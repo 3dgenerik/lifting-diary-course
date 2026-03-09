@@ -25,5 +25,8 @@
       "Bash(npx shadcn@latest:*)",
       "Bash(git add:*)"
     ]
+  },
+  "enabledPlugins": {
+    "github@claude-plugins-official": false
   }
 }

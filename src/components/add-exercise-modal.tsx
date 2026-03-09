@@ -44,7 +44,6 @@ export function AddExerciseModal({
         exerciseId: Number(selectedExerciseId),
       });
 
-      // Reset and close
       setSelectedExerciseId('');
       onOpenChange(false);
     } catch (error) {
